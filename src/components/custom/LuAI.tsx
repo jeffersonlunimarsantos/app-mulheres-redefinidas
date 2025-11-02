@@ -69,26 +69,35 @@ const luResponses = {
 };
 
 export default function LuAI() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [inputMessage, setInputMessage] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Garantir hidratação correta
+  useEffect(() => {
+    setIsClient(true);
+    // Adicionar mensagem inicial apenas no cliente
+    const initialMessage: Message = {
       id: '1',
       type: 'lu',
       content: luResponses.greeting[Math.floor(Math.random() * luResponses.greeting.length)],
       timestamp: new Date(),
       category: 'encouragement'
-    }
-  ]);
-  const [inputMessage, setInputMessage] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+    };
+    setMessages([initialMessage]);
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    if (isClient) {
+      scrollToBottom();
+    }
+  }, [messages, isClient]);
 
   const generateLuResponse = (userMessage: string): { content: string; category: string } => {
     const message = userMessage.toLowerCase();
@@ -130,7 +139,7 @@ export default function LuAI() {
 
   const handleSendMessage = async (messageText?: string) => {
     const text = messageText || inputMessage.trim();
-    if (!text) return;
+    if (!text || !isClient) return;
 
     // Adicionar mensagem do usuário
     const userMessage: Message = {
@@ -181,6 +190,20 @@ export default function LuAI() {
       default: return 'text-gray-600 bg-gray-50';
     }
   };
+
+  // Renderizar loading até hidratação completa
+  if (!isClient) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Bot className="w-6 h-6 text-white" />
+          </div>
+          <p className="text-gray-600">Carregando LÙ...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50">
